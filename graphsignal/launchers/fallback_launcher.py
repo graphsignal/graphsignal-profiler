@@ -1,0 +1,53 @@
+import logging
+import os
+import shutil
+import sys
+
+from graphsignal.launchers.base_launcher import BaseLauncher
+from graphsignal.launchers.command_utils import start_watcher
+from graphsignal.profilers.cupti_profiler import CuptiProfiler
+
+logger = logging.getLogger('graphsignal')
+
+
+class FallbackLauncher(BaseLauncher):
+    def match(self) -> bool:
+        return True
+
+    def launch(self) -> None:
+        if not self.args:
+            print('graphsignal-run: no command specified')
+            sys.exit(1)
+
+        CuptiProfiler.setup_env_vars()
+
+        start_watcher(os.getpid())
+
+        command = self.args[0]
+        rest = list(self.args[1:])
+
+        executable = _resolve(command)
+        if executable:
+            logger.debug('FallbackLauncher exec: %s %s', executable, rest)
+            try:
+                os.execv(executable, [executable] + rest)
+            except PermissionError:
+                print("graphsignal-run: permission error while launching '%s'" % executable)
+                print("Did you mean `graphsignal-run python %s`?" % executable)
+                sys.exit(1)
+            except Exception as e:
+                print("graphsignal-run: error launching '%s': %s" % (executable, e))
+                logger.error('error launching executable', exc_info=True)
+                raise
+            return
+
+        # Fall back to `python -m <command>` for module-name targets
+        # (e.g. `graphsignal-run mypkg.cli`).
+        logger.debug('FallbackLauncher exec python -m: %s', command)
+        os.execv(sys.executable, [sys.executable, '-m', command] + rest)
+
+
+def _resolve(name):
+    if os.path.isabs(name) and os.path.isfile(name):
+        return name
+    return shutil.which(name)

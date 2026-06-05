@@ -1,0 +1,37 @@
+.DS_Store
+._
+._.*
+*.pyc
+venv*
+build
+lib
+.bin
+log/*
+logs/*
+!.gitkeep
+tmp
+.tmp
+dist
+*.egg-info
+__pycache__
+*.h5
+*.pt
+*.pth
+.vscode
+.python-version
+README.rst
+MNIST
+lightning_logs
+test_trainer
+temp
+.chroma
+
+# AI assistant / agent files — kept local, not committed (CUPTI internals now
+# live in the private graphsignal-native repo).
+CLAUDE.md
+.claude/
+AGENTS.md
+GEMINI.md
+.cursor/
+.windsurf/
+.github/copilot-instructions.md
